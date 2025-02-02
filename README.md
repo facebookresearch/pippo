@@ -1,4 +1,4 @@
-##  Pippo: High-Resolution Multi-View Humans from a Single Image
+#  Pippo: High-Resolution Multi-View Humans from a Single Image
 
 
 We present Pippo, a generative model capable of producing 1K resolution dense turnaround videos of a person from a single casually clicked photo.
