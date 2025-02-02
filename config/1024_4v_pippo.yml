@@ -1,0 +1,179 @@
+run_tag: 1024_4v_pippo
+
+consts:
+  img_size: 1024
+  ref_img_size: 1024
+  multiview_size: 1024
+  latent_size: 128
+  ref_latent_size: 128
+
+  latent_channels: 4
+  patch_size: 2
+  dim: 1536
+  depth: 28
+  multiview_grid_stack: false
+  learn_pe: true
+
+  num_views: 4
+  num_ref_views: 1
+  denoise_ref_views: false
+  campose_relative_to_headpose: false
+
+  # because we copy reference view and first view camera is given.
+  cam_pose_transform: "flatten__per_camera__no_ref"
+  campose_relative_to_first_view: false
+
+  # add headpose keypoints
+  load_keypoints: true
+  keypoints_format: "headpose"
+  skip_ref_kpts: true
+
+  # add plucker
+  load_plucker: true
+  controlmlp_xt: true
+  num_ref_frontal_cameras: 30
+
+  # fix camera intrinsics
+  center_square_crop_intrinsics: false
+  cambyte_resize: false
+  cond_self_attn: true
+
+  # bump up total learning rate
+  lr: 0.0001
+
+  # resume a past run (with same config), turned on by default if requeued by slurm
+  resume: false
+
+  ignore_names:
+    - "schedule"  # ideally, we should not use scheduler params when loading a pretrained checkpoint?
+
+model:
+  class_name: latent_diffusion.models.pippo.Pippo
+  parameterization: eps
+  scale_factor: 0.13025
+  ref_cond_attn: true
+  multiview_size: ${consts.multiview_size}
+  img_size: ${consts.img_size}
+  ref_img_size: ${consts.ref_img_size}
+  p_drop_ref_img: 0.0  # classifier free guidance
+  p_drop_cam_pos_enc: 0.0  # classifier free guidance
+  p_drop_control: 0.0  # classifier free guidance
+  multiview_grid_stack: ${consts.multiview_grid_stack}
+  num_views: ${consts.num_views}
+  controlmlp_xt: ${consts.controlmlp_xt}
+
+  compressor:
+    pretrained_model_name_or_path: "/home/yashkant/sdxl_vae"
+    local_files_only: True
+
+  generator:
+    in_channels: ${consts.latent_channels}
+    img_size: ${consts.latent_size}
+    patch_size: ${consts.patch_size}
+    dim: ${consts.dim}
+    depth: ${consts.depth}
+    num_heads: 24
+    patchify_ps: true
+    num_views: 1  # disabled PE for each view
+    learn_pe: ${consts.learn_pe}
+    cond_self_attn: ${consts.cond_self_attn}
+    pos_embed_kind: "old"
+
+  cam_mlp:
+    in_channels: 16
+    hidden_size: 1024
+    out_channels: ${consts.dim}
+    depth: 1
+    num_patches_or_tokens: 1  # disabled PE for each camera
+    init_last_zero: true
+
+  ref_encoder:
+    img_size: ${consts.ref_latent_size}
+    in_channels: ${consts.latent_channels}
+    dim: ${consts.dim}
+    patch_size: ${consts.patch_size}
+
+  schedule:
+    num_timesteps: 1000
+    schedule_type: cosine
+
+  control_mlp:
+    hidden_size: ${consts.dim}
+    depth: ${consts.depth}
+    zero_init: true
+    control_encoder_latent: true
+
+    # encode plucker through siren
+    plucker_siren_config:
+      layers: [16, 32]
+      in_features: 6
+      out_features: 32
+    in_channels: 40 # 4 + 4 (kpts, rgb, plucker) + 32
+
+optimizer:
+  class_name: torch.optim.AdamW
+  per_module:
+    generator:
+      lr: ${consts.lr}
+      betas:
+      - 0.9
+      - 0.98
+      eps: 1.0e-06
+    cam_mlp:
+      lr: ${consts.lr}
+      betas:
+      - 0.9
+      - 0.98
+      eps: 1.0e-06
+    null_conds:
+      lr: ${consts.lr}
+      betas:
+      - 0.9
+      - 0.98
+      eps: 1.0e-06
+    ref_encoder:
+      lr: ${consts.lr}
+      betas:
+      - 0.9
+      - 0.98
+      eps: 1.0e-06
+    control_mlp:
+      lr: ${consts.lr}
+      betas:
+      - 0.9
+      - 0.98
+      eps: 1.0e-06
+
+loss:
+  class_name: latent_diffusion.losses.DenoisingLoss
+
+summary:
+  class_name: latent_diffusion.summaries.MultiviewDenoisingSummary
+  tb_dir: ${train.tb_dir}
+  metrics: ["mse", "3d"]
+  n_views_per_sample: 1
+  n_max_samples: 1
+  uncond_scale: 1.0  # classifier free guidance disabled
+  cfg_rescale: 0.0
+  n_ddim_steps: 30
+  ddim_eta: 0.1
+  val_eval: true
+
+train:
+  tag: ${run_tag}
+  use_amp: false
+  resume: ${consts.resume}
+  n_nodes: 8
+  run_dir: ./outputs/${run_tag}
+  timestamp_run_dir: true
+  ckpt_dir: ${.run_dir}/checkpoints
+  tb_dir: ${.run_dir}/tb
+  batch_size: 2
+  n_max_iters: 1000000
+  log_every_n_steps: 10
+  log_debug_info: true
+  clip_grad_norm: 1.0
+  summary_every_n_steps: 100
+  summary_before_start: true
+  persistent_ckpt_every_n_steps: 10000
+  num_workers: 8
