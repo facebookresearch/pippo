@@ -1,6 +1,24 @@
 <h2 align="center">Pippo: High-Resolution Multi-View Humans from a Single Image</h1>
 
 <p align="center">
+   <a href='https://yashkant.github.io/pippo/'>
+      <img src='https://img.shields.io/badge/Pippo-Page-azure?style=for-the-badge&logo=Google%20chrome&logoColor=white&labelColor=000080&color=007FFF' alt='Project Page'>
+   </a>
+
+   <a href="https://yashkant.github.io/pippo/pippo.pdf">
+      <img src='https://img.shields.io/badge/Paper-PDF-green?style=for-the-badge&logo=adobeacrobatreader&logoWidth=20&logoColor=white&labelColor=66cc00&color=94DD15' alt='Paper PDF'>
+   </a>
+
+   <a href='https://yashkant.github.io/pippo/#visuals'>
+      <img src='https://img.shields.io/badge/Webpage-Visuals-orange?style=for-the-badge&&labelColor=FF5500&color=orange' alt='Spaces'>
+   </a>
+
+   <a href='https://drive.google.com/drive/folders/1UbAbfhjZxAFwHiQ1jXKDf_puIhTz-0Et'>
+      <img src='https://img.shields.io/badge/More-Results-ffffff?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCI+PHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xOSAzSDVjLTEuMSAwLTIgLjktMiAydjE0YzAgMS4xLjkgMiAyIDJoMTRjMS4xIDAgMi0uOSAyLTJWNWMwLTEuMS0uOS0yLTItMnpNOSAxN0g3di01aDJ2NXptNCAwaC0ydi03aDJ2N3ptNCAwaC0yVjhoMnY5eiIvPjwvc3ZnPg==&logoColor=white&labelColor=8A2BE2&color=9370DB' alt='Visuals (Drive)'>
+   </a>
+</p>
+
+<p align="center">
   <img src="./assets/pippo_short_github.gif" alt="Pippo" title="Pippo" width="1080"/>
 </p>
 
@@ -32,23 +50,6 @@
 </p>
 
 
-<p align="center">
-   <a href='https://yashkant.github.io/pippo/'>
-      <img src='https://img.shields.io/badge/Pippo-Page-azure?style=for-the-badge&logo=Google%20chrome&logoColor=white&labelColor=000080&color=007FFF' alt='Project Page'>
-   </a>
-
-   <a href="https://yashkant.github.io/pippo/pippo.pdf">
-      <img src='https://img.shields.io/badge/Paper-PDF-green?style=for-the-badge&logo=adobeacrobatreader&logoWidth=20&logoColor=white&labelColor=66cc00&color=94DD15' alt='Paper PDF'>
-   </a>
-
-   <a href='https://yashkant.github.io/pippo/#visuals'>
-      <img src='https://img.shields.io/badge/Webpage-Visuals-orange?style=for-the-badge&&labelColor=FF5500&color=orange' alt='Spaces'>
-   </a>
-
-   <a href='https://drive.google.com/drive/folders/1UbAbfhjZxAFwHiQ1jXKDf_puIhTz-0Et'>
-      <img src='https://img.shields.io/badge/More-Results-ffffff?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCI+PHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xOSAzSDVjLTEuMSAwLTIgLjktMiAydjE0YzAgMS4xLjkgMiAyIDJoMTRjMS4xIDAgMi0uOSAyLTJWNWMwLTEuMS0uOS0yLTItMnpNOSAxN0g3di01aDJ2NXptNCAwaC0ydi03aDJ2N3ptNCAwaC0yVjhoMnY5eiIvPjwvc3ZnPg==&logoColor=white&labelColor=8A2BE2&color=9370DB' alt='Visuals (Drive)'>
-   </a>
-</p>
 
 We present Pippo, a generative model capable of producing 1K resolution dense turnaround videos of a person from a single casually clicked photo.
 Pippo is a multi-view diffusion transformer and does not require any additional inputs — e.g., a fitted parametric model or camera parameters of the input image.
