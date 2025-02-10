@@ -9,20 +9,32 @@ import torch as th
 import numpy as np
 import os
 import imageio
+import logging
+
 from einops import rearrange, repeat
 from torch.utils.data import default_collate
+
+# configure logger before importing anything else
+logging.basicConfig(
+    format="[%(asctime)s][%(levelname)s][%(name)s]: %(message)s",
+    level=logging.INFO,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("train")
 
 
 def load_samples():
     """ load all samples """
-    samples_path = sorted(glob.glob("/home/yashkant/rsc/latent_diffusion/sample_data/*.npy"))
+    local_dir = os.getcwd().split("scripts/")[0]
+    samples_path = sorted(glob.glob(os.path.join(local_dir, "sample_data/ava_samples/*.npy")))
     samples = [np.load(sample_path, allow_pickle=True).item() for sample_path in samples_path]
     return samples
 
 
 def load_batches(batch_size=2, num_views=2, resolution=1024, num_samples=10):
     """ load sample batches for overfitting """
-    samples_path = sorted(glob.glob("/home/yashkant/rsc/latent_diffusion/sample_data/*.npy"))
+    local_dir = os.getcwd().split("scripts/")[0]
+    samples_path = sorted(glob.glob(os.path.join(local_dir, "sample_data/ava_samples/*.npy")))
     samples = [np.load(sample_path, allow_pickle=True).item() for sample_path in samples_path]
     samples = samples[:num_samples]
 
