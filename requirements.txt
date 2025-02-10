@@ -25,3 +25,5 @@ transformers==4.48.2
 triton==3.0.0
 wcwidth==0.2.13
 zipp==3.21.0
+more_itertools==10.5.0
+kornia==0.8.0
