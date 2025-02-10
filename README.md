@@ -1,4 +1,4 @@
-<h1 align="center">Pippo: High-Resolution Multi-View Humans from a Single Image</h1>
+<h2 align="center">Pippo: High-Resolution Multi-View Humans from a Single Image</h1>
 
 <p align="center">
   <img src="./assets/pippo_short_github.gif" alt="Pippo" title="Pippo" width="1080"/>
