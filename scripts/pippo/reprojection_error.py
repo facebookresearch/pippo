@@ -353,3 +353,8 @@ if __name__ == "__main__":
         # compute reprojection error
         metrics = get_l2_reproj(image_grid, {}, batch, ".", "gen_sample_0", H, W, NV)
         print(f"{metrics=}")
+
+        # divide by resolution to get percentage error
+        for k,v in metrics.items():
+            metrics[k] = (v / max(W, H)) * 100
+        print(f"{metrics=}")

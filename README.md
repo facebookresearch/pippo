@@ -97,6 +97,12 @@ Additionally, we provide a tiny model config to train on a smaller gpu:
 python train.py config/tiny/128_4v_tiny.yml
 ```
 
+## Re-projection Error
+To compute the re-projection error between generated images and ground truth images, run the following command:
+```
+python scripts/pippo/reprojection_error.py
+```
+
 
 ## Useful Pointers
 Here is a list of useful things to borrow from this codebase:
