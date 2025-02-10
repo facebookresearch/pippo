@@ -106,8 +106,8 @@ python scripts/pippo/reprojection_error.py
 
 ## Useful Pointers
 Here is a list of useful things to borrow from this codebase:
-- ControlMLP to inject spatial control in Diffusion Transformers: [see here](https://github.com/facebookresearch/pippo/blob/main/latent_diffusion/models/control_mlp.py)
-- Attention Biasing to run inference on 5x longer sequences: [see here](https://github.com/facebookresearch/pippo/blob/main/latent_diffusion/models/dit.py#L161)
+- ControlMLP to inject spatial control in Diffusion Transformers: [see here](https://github.com/facebookresearch/pippo/blob/main/latent_diffusion/models/control_mlp.py#L161)
+- Attention Biasing to run inference on 5x longer sequences: [see here](https://github.com/facebookresearch/pippo/blob/main/latent_diffusion/models/dit.py#L165)
 - Re-projection Error Metric: [see here](https://github.com/facebookresearch/pippo/blob/main/scripts/pippo/reprojection_error.py#L150)
 
 
