@@ -116,6 +116,10 @@ We plan to add and update the following in the future:
 - Cleaning up fluff in pippo.py and dit.py
 - Inference script for pretrained models.
 
+## License
+
+See LICENSE file for details.
+
 ## Citation
 If you benefit from this codebase, consider citing our work:
 ```
