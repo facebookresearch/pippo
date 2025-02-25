@@ -97,6 +97,12 @@ Additionally, we provide a tiny model config to train on a smaller gpu:
 python train.py config/tiny/128_4v_tiny.yml
 ```
 
+## Training on custom dataset (see https://github.com/facebookresearch/pippo/issues/9): 
+You will have to prepare your dataset similar to the provided [Ava-256 samples stored in numpy files](https://huggingface.co/datasets/yashkant/pippo/tree/main/ava_samples) on your custom dataset.
+
+The difficult bits could be to create the Plucker Rays and Spatial Anchor images, and we have provided our implementations for those methods (using Ava-256 and Goliath data) [in this gist here](https://gist.github.com/yashkant/971e205d85b15e17d20d33edd29d6016). You can refer these methods to create these fields on your own custom datasets!
+
+
 ## Re-projection Error
 To compute the re-projection error between generated images and ground truth images, run the following command:
 ```
