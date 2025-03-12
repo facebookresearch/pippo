@@ -56,7 +56,7 @@ def train(config):
     iteration, epoch = 0, 0
 
     # resume from checkpoint
-    ckpt_path = config.train.get("ckpt_path", None)
+    ckpt_path = config.train.get("ckpt_dir", None)
     if ckpt_path is not None:
         if os.path.exists(ckpt_path):
             ckpt_dict = load_checkpoint(
