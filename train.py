@@ -76,7 +76,7 @@ def train(config):
     train_loader = val_loader = cycle(train_data)
 
     # summary function
-    summary_fn = load_from_config(config.summary, map_location=device)
+    summary_fn = load_from_config(config.summary)
 
     # count parameters
     logger.info(
