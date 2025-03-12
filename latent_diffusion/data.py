@@ -25,7 +25,7 @@ logger = logging.getLogger("train")
 
 def load_samples():
     """ load all samples """
-    local_dir = os.getcwd().split("scripts/")[0]
+    local_dir = os.getcwd().split("latent_diffusion/")[0]
     samples_path = sorted(glob.glob(os.path.join(local_dir, "sample_data/ava_samples/*.npy")))
     samples = [np.load(sample_path, allow_pickle=True).item() for sample_path in samples_path]
     return samples
@@ -33,7 +33,7 @@ def load_samples():
 
 def load_batches(batch_size=2, num_views=2, resolution=1024, num_samples=10):
     """ load sample batches for overfitting """
-    local_dir = os.getcwd().split("scripts/")[0]
+    local_dir = os.getcwd().split("latent_diffusion/")[0]
     samples_path = sorted(glob.glob(os.path.join(local_dir, "sample_data/ava_samples/*.npy")))
     samples = [np.load(sample_path, allow_pickle=True).item() for sample_path in samples_path]
     samples = samples[:num_samples]

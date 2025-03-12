@@ -254,7 +254,10 @@ def generate_and_save(
         # keep only first sample
         for k,v in batch.items():
             if isinstance(v, (th.Tensor, np.ndarray, list)):
-                batch[k] = v[:1]
+                if isinstance(v, th.Tensor):
+                    batch[k] = v.to(device)[:1]
+                else:
+                    batch[k] = v[:1]
 
         gen_samples = []
         for i in range(n_views_per_sample):
