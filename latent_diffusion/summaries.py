@@ -6,15 +6,15 @@
 
 import logging
 import os
+import time
 from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 import torch as th
-import time
 from torchvision.utils import make_grid
 
-from latent_diffusion.utils import load_from_config
 from latent_diffusion.samplers.ddim import DDIMSampler
+from latent_diffusion.utils import load_from_config
 from scripts.pippo.generate_ref import InferenceSampler, generate_and_save
 
 logging.basicConfig(
@@ -33,7 +33,6 @@ class MultiviewDenoisingSummary:
     def __call__(
         self, preds: Dict[str, Any], **kwargs
     ) -> Dict[str, Tuple[th.Tensor, str]]:
-
         logger.info(f"Evaluating models and generating samples")
         model = kwargs["model"]
 
@@ -54,7 +53,7 @@ class MultiviewDenoisingSummary:
         n_max_samples = self.summary_kwargs.get("n_max_samples", 2)
 
         # hacky way to get the device
-        device =  model.cam_mlp.in_proj.weight.device
+        device = model.cam_mlp.in_proj.weight.device
 
         ts = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
 

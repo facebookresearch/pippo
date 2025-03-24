@@ -5,12 +5,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import glob
-import torch as th
-import numpy as np
-import os
-import imageio
 import logging
+import os
 
+import imageio
+import numpy as np
+import torch as th
 from einops import rearrange, repeat
 from torch.utils.data import default_collate
 
@@ -24,18 +24,26 @@ logger = logging.getLogger("train")
 
 
 def load_samples():
-    """ load all samples """
+    """load all samples"""
     local_dir = os.getcwd().split("scripts/")[0]
-    samples_path = sorted(glob.glob(os.path.join(local_dir, "sample_data/ava_samples/*.npy")))
-    samples = [np.load(sample_path, allow_pickle=True).item() for sample_path in samples_path]
+    samples_path = sorted(
+        glob.glob(os.path.join(local_dir, "sample_data/ava_samples/*.npy"))
+    )
+    samples = [
+        np.load(sample_path, allow_pickle=True).item() for sample_path in samples_path
+    ]
     return samples
 
 
 def load_batches(batch_size=2, num_views=2, resolution=1024, num_samples=10):
-    """ load sample batches for overfitting """
+    """load sample batches for overfitting"""
     local_dir = os.getcwd().split("scripts/")[0]
-    samples_path = sorted(glob.glob(os.path.join(local_dir, "sample_data/ava_samples/*.npy")))
-    samples = [np.load(sample_path, allow_pickle=True).item() for sample_path in samples_path]
+    samples_path = sorted(
+        glob.glob(os.path.join(local_dir, "sample_data/ava_samples/*.npy"))
+    )
+    samples = [
+        np.load(sample_path, allow_pickle=True).item() for sample_path in samples_path
+    ]
     samples = samples[:num_samples]
 
     if batch_size > num_samples:
@@ -43,22 +51,39 @@ def load_batches(batch_size=2, num_views=2, resolution=1024, num_samples=10):
 
     # remove extra views
     for sample in samples:
-        for k in ["video", "cams", "cam_intrin", "cam_extrin", "cam_pose", "kpts", "frames", "plucker"]:
-            if k in sample: sample[k] = sample[k][:num_views]
+        for k in [
+            "video",
+            "cams",
+            "cam_intrin",
+            "cam_extrin",
+            "cam_pose",
+            "kpts",
+            "frames",
+            "plucker",
+        ]:
+            if k in sample:
+                sample[k] = sample[k][:num_views]
 
     # resize images
     for sample in samples:
         for k in ["video", "ref_image", "plucker", "ref_plucker", "kpts", "ref_kpts"]:
             if k in sample:
                 value = rearrange(sample[k], "nv t c h w -> (nv t) c h w")
-                value = th.nn.functional.interpolate(value, size=(resolution, resolution))
-                value = rearrange(value, "(nv t) c h w -> nv t c h w", nv=1 if "ref" in k else num_views)
+                value = th.nn.functional.interpolate(
+                    value, size=(resolution, resolution)
+                )
+                value = rearrange(
+                    value,
+                    "(nv t) c h w -> nv t c h w",
+                    nv=1 if "ref" in k else num_views,
+                )
                 sample[k] = value
 
     batches = []
     for i in range(0, len(samples), batch_size):
-        batch = default_collate(samples[i:i+batch_size])
-        if "video" in batch: batch["image"] = batch.pop("video")
+        batch = default_collate(samples[i : i + batch_size])
+        if "video" in batch:
+            batch["image"] = batch.pop("video")
         batches.append(batch)
 
     return batches
@@ -85,9 +110,7 @@ def visualize_sample(sample, num_cams, vid_path):
         vid_list.append(vid)
 
         if "kpts" in sample:
-            kpts = rearrange(
-                sample["kpts"], "(n t) c h w -> t h (n w) c", n=n, t=t
-            )
+            kpts = rearrange(sample["kpts"], "(n t) c h w -> t h (n w) c", n=n, t=t)
             vid_list.append(kpts)
     else:
         t = nt
@@ -115,7 +138,9 @@ def visualize_sample(sample, num_cams, vid_path):
 
 if __name__ == "__main__":
     samples = load_samples()
-    save_dir = "/".join(os.path.abspath(__file__).split("/")[:-2] + ["outputs", "visuals"])
+    save_dir = "/".join(
+        os.path.abspath(__file__).split("/")[:-2] + ["outputs", "visuals"]
+    )
 
     for idx, sample in enumerate(samples):
         save_path = os.path.join(save_dir, f"sample_{idx}.mp4")

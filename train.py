@@ -13,17 +13,20 @@ from copy import deepcopy
 from itertools import cycle
 
 import torch as th
-from torch import nn
-
 import torch.multiprocessing as mp
 import torchvision
-
-
-from latent_diffusion.utils import build_optimizer, load_from_config, load_checkpoint, save_checkpoint, count_parameters, process_losses
+from omegaconf import DictConfig, OmegaConf
+from torch import nn
 
 from latent_diffusion.data import load_batches
-
-from omegaconf import DictConfig, OmegaConf
+from latent_diffusion.utils import (
+    build_optimizer,
+    count_parameters,
+    load_checkpoint,
+    load_from_config,
+    process_losses,
+    save_checkpoint,
+)
 
 # configure logger before importing anything else
 logging.basicConfig(
@@ -72,7 +75,12 @@ def train(config):
             logger.warning(f"checkpoint `{ckpt_path}` does not exist for restart")
 
     # load the dataset
-    train_data = load_batches(batch_size=4, num_views=config.consts.num_views, resolution=config.consts.img_size, num_samples=1)
+    train_data = load_batches(
+        batch_size=4,
+        num_views=config.consts.num_views,
+        resolution=config.consts.img_size,
+        num_samples=1,
+    )
     train_loader = val_loader = cycle(train_data)
 
     # summary function
@@ -86,7 +94,7 @@ def train(config):
     # train loop
     while True:
         batch = next(train_loader)
-        for k,v in batch.items():
+        for k, v in batch.items():
             if isinstance(v, th.Tensor):
                 batch[k] = v.to(device)
 
@@ -120,7 +128,10 @@ def train(config):
             logger.info(f"#{iteration} Loss: {loss_str}")
 
         # save checkpoint
-        save_now = iteration % config.train.get("persistent_ckpt_every_n_steps", 1e6) == 0 and iteration > 0
+        save_now = (
+            iteration % config.train.get("persistent_ckpt_every_n_steps", 1e6) == 0
+            and iteration > 0
+        )
         if save_now:
             os.makedirs(config.train.ckpt_dir, exist_ok=True)
             ckpt_path = f"{config.train.ckpt_dir}/{iteration:06d}.pt"

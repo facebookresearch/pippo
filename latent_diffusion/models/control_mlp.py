@@ -4,15 +4,16 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import List, Optional
 import logging
+from typing import List, Optional
+
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
 
-from latent_diffusion.blocks.timestep import TimestepEmbedder
 from latent_diffusion.blocks.siren import SIREN
+from latent_diffusion.blocks.timestep import TimestepEmbedder
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,6 @@ class ControlEncoder(nn.Module):
 
 
 class ControlEncoderLatent(nn.Module):
-
     def __init__(self, in_channels: int, out_channels: int, hidden_size: int = 256):
         super().__init__()
 
@@ -205,7 +205,7 @@ class ControlMLP(nn.Module):
             self.plucker_encoder = SIREN(**plucker_siren_config)
 
     def forward(
-        self, dense_cond, t, x_t = None, p_drop = 0.0, plucker=None, drop=False
+        self, dense_cond, t, x_t=None, p_drop=0.0, plucker=None, drop=False
     ) -> List[th.Tensor]:
         """
         Args:
@@ -233,7 +233,13 @@ class ControlMLP(nn.Module):
                 downsample_shape = dense_cond.shape[-2:]
             else:
                 downsample_shape = (plucker.shape[-2] // 8, plucker.shape[-1] // 8)
-            plucker = F.interpolate(plucker, size=downsample_shape, mode="bilinear", antialias=False, align_corners=True)
+            plucker = F.interpolate(
+                plucker,
+                size=downsample_shape,
+                mode="bilinear",
+                antialias=False,
+                align_corners=True,
+            )
 
             # if we only provide plucker
             if dense_cond is not None:

@@ -9,11 +9,13 @@ import math
 import time
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange, repeat
+
 from latent_diffusion.blocks.norm import LayerNorm, RMSNorm
 from latent_diffusion.blocks.patch import Patchify, PatchifyPS, Unpatchify, UnpatchifyPS
 from latent_diffusion.blocks.timestep import TimestepEmbedder
@@ -21,7 +23,7 @@ from latent_diffusion.blocks.timestep import TimestepEmbedder
 logger = logging.getLogger(__name__)
 
 INTERPOLATE_MODE = "bilinear"
-ANTIALIAS = (INTERPOLATE_MODE == "bilinear")
+ANTIALIAS = INTERPOLATE_MODE == "bilinear"
 BEFORE_FUSE = True
 
 
@@ -30,7 +32,7 @@ def modulate(x: th.Tensor, shift: th.Tensor, scale: th.Tensor) -> th.Tensor:
 
 
 class DiTBlock(nn.Module):
-    """ DiT block modulated with ControlMLP and Attention Biasing. """
+    """DiT block modulated with ControlMLP and Attention Biasing."""
 
     def __init__(
         self,
@@ -107,7 +109,6 @@ class DiTBlock(nn.Module):
         kpts_self_attn: bool = False,
         attn_bias: Optional[float] = None,
     ) -> th.Tensor:
-
         B, N, D = x.shape
         N_org = N
         N_kv = N
@@ -183,15 +184,13 @@ class DiTBlock(nn.Module):
             curr_tokens = num_tokens_per_view * curr_views
             train_tokens = num_tokens_per_view * train_views
             # sqrt((log(N) / log(T)) / d)
-            scale = math.sqrt(((math.log(curr_tokens) / math.log(train_tokens)) * attn_bias) / _D)
+            scale = math.sqrt(
+                ((math.log(curr_tokens) / math.log(train_tokens)) * attn_bias) / _D
+            )
             print(f"using rescale: {attn_bias}")
 
         x_attn = F.scaled_dot_product_attention(
-            q,
-            k,
-            v,
-            dropout_p=self.attn_drop.p if self.training else 0.0,
-            scale=scale
+            q, k, v, dropout_p=self.attn_drop.p if self.training else 0.0, scale=scale
         )
 
         x_attn = x_attn.transpose(1, 2).reshape(B, N, D)
@@ -201,9 +200,9 @@ class DiTBlock(nn.Module):
             x_attn = gate_attn.unsqueeze(1) * modulate(x_attn, shift_attn, scale_attn)
         else:
             # handle different timesteps across each view
-            gate_attn = repeat(gate_attn, "(B NV) D -> B (NV L) D", NV=NV, L=N//NV)
-            shift_attn = repeat(shift_attn, "(B NV) D -> B (NV L) D", NV=NV, L=N//NV)
-            scale_attn = repeat(scale_attn, "(B NV) D -> B (NV L) D", NV=NV, L=N//NV)
+            gate_attn = repeat(gate_attn, "(B NV) D -> B (NV L) D", NV=NV, L=N // NV)
+            shift_attn = repeat(shift_attn, "(B NV) D -> B (NV L) D", NV=NV, L=N // NV)
+            scale_attn = repeat(scale_attn, "(B NV) D -> B (NV L) D", NV=NV, L=N // NV)
 
             # modulate and gate
             x_attn = x_attn * (1 + scale_attn) + shift_attn
@@ -224,9 +223,9 @@ class DiTBlock(nn.Module):
             x_mlp = gate_mlp.unsqueeze(1) * modulate(x_mlp, shift_mlp, scale_mlp)
         else:
             # handle different timesteps across each view
-            gate_mlp = repeat(gate_mlp, "(B NV) D -> B (NV L) D", NV=NV, L=N//NV)
-            shift_mlp = repeat(shift_mlp, "(B NV) D -> B (NV L) D", NV=NV, L=N//NV)
-            scale_mlp = repeat(scale_mlp, "(B NV) D -> B (NV L) D", NV=NV, L=N//NV)
+            gate_mlp = repeat(gate_mlp, "(B NV) D -> B (NV L) D", NV=NV, L=N // NV)
+            shift_mlp = repeat(shift_mlp, "(B NV) D -> B (NV L) D", NV=NV, L=N // NV)
+            scale_mlp = repeat(scale_mlp, "(B NV) D -> B (NV L) D", NV=NV, L=N // NV)
 
             # modulate and gate
             x_mlp = x_mlp * (1 + scale_mlp) + shift_mlp
@@ -278,7 +277,7 @@ class DiT(nn.Module):
         cond_cat_fuse: bool = True,  # fuse cond_cat with x
         kpts_self_attn: bool = False,  # fuse kpts with x
         cond_attn_enabled: bool = True,
-        pos_embed_kind: str = "sincos", # "sincos" or "learnable" or "old"
+        pos_embed_kind: str = "sincos",  # "sincos" or "learnable" or "old"
     ):
         super().__init__()
 
@@ -411,7 +410,11 @@ class DiT(nn.Module):
         # intialize input projection layers
         self.in_proj_mul = in_proj_mul
         self.in_proj_identity_init = in_proj_identity_init
-        self.in_proj  = nn.Linear(in_proj_mul * dim, dim, bias=True) if in_proj_mul > 1 else nn.Identity()
+        self.in_proj = (
+            nn.Linear(in_proj_mul * dim, dim, bias=True)
+            if in_proj_mul > 1
+            else nn.Identity()
+        )
 
         self.initialize_weights()
         logger.info(f"block level precision: {th.get_float32_matmul_precision()}")
@@ -478,8 +481,8 @@ class DiT(nn.Module):
         # intialize as identity for first dim and zero for rest
         logger.info(f"input proj identity init: {self.in_proj_identity_init}")
         if self.in_proj_mul > 1 and self.in_proj_identity_init:
-            nn.init.eye_(self.in_proj.weight[:, :self.dim])
-            nn.init.constant_(self.in_proj.weight[:, self.dim:], 0)
+            nn.init.eye_(self.in_proj.weight[:, : self.dim])
+            nn.init.constant_(self.in_proj.weight[:, self.dim :], 0)
             nn.init.constant_(self.in_proj.bias, 0)
 
     def forward(
@@ -546,7 +549,9 @@ class DiT(nn.Module):
 
             if self.pos_embed.shape[1] > x.shape[1]:
                 # positional encoding different for different views
-                pos_embed = repeat(self.pos_embed, "1 (NV N) D -> (B NV) N D", NV=NV, B=B)
+                pos_embed = repeat(
+                    self.pos_embed, "1 (NV N) D -> (B NV) N D", NV=NV, B=B
+                )
             else:
                 pos_embed = self.pos_embed
             x = x + pos_embed
@@ -633,7 +638,16 @@ class DiT(nn.Module):
 
         if controls is not None:
             for b, (block, control) in enumerate(zip(self.blocks, controls)):
-                x = block(x, cond=c, cond_attn=cond_attn, control=control, NV=NV, NVR=NVR, NVCC=NVCC, attn_bias=attn_bias)
+                x = block(
+                    x,
+                    cond=c,
+                    cond_attn=cond_attn,
+                    control=control,
+                    NV=NV,
+                    NVR=NVR,
+                    NVCC=NVCC,
+                    attn_bias=attn_bias,
+                )
         else:
             for block in self.blocks:
                 x = block(x, cond=c, cond_attn=cond_attn, NV=NV, NVR=NVR)
@@ -662,4 +676,3 @@ class DiT(nn.Module):
             x = rearrange(x, "(B NV) C H W -> B NV C H W", NV=NV)
 
         return x
-

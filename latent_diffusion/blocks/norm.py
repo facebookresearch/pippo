@@ -4,14 +4,15 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
+
 import torch as th
 import torch.nn as nn
-
-import logging
 
 logger = logging.getLogger(__name__)
 
 from torch.nn import RMSNorm as BaseRMSNorm
+
 
 class LayerNorm(nn.LayerNorm):
     """LayerNorm.
