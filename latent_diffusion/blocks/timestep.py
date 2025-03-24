@@ -4,11 +4,11 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+import math
 from typing import Optional
 
 import torch as th
 import torch.nn as nn
-import math
 
 
 def timestep_embedding(

@@ -6,45 +6,38 @@
 
 """ Do not use this file for Pippo inference, it is only kept to be used during training. Use inference.py instead."""
 
+import glob
+import json
+import logging
 import os
+import pprint
+import random
 import sys
 import time
+from collections import defaultdict
+from copy import deepcopy
+from functools import partial
 from typing import Any, Callable, Dict, Optional, Tuple
 
 import cv2
 import imageio
-import random
 import numpy as np
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms.v2 as T
 import torchvision.transforms.v2.functional as TF
+from easydict import EasyDict as edict
 from einops import rearrange, repeat
-
+from more_itertools import chunked
 from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import ConcatDataset, DataLoader, Dataset, IterableDataset
 from torchvision.utils import make_grid, save_image
 from tqdm import tqdm
-import glob
-import torchvision.transforms.v2 as T
-import logging
-import pprint
-from easydict import EasyDict as edict
-from collections import defaultdict
-from copy import deepcopy
-from functools import partial
-import json
-
-from latent_diffusion.samplers.ddim import DDIMSampler
-from latent_diffusion.utils import (
-    load_checkpoint,
-    load_from_config,
-    to_device,
-)
 
 from common import global_registry
-from more_itertools import chunked
+from latent_diffusion.samplers.ddim import DDIMSampler
+from latent_diffusion.utils import load_checkpoint, load_from_config, to_device
 
 th.set_float32_matmul_precision("highest")
 SAVE_NPY = False
@@ -62,7 +55,7 @@ logger.info("Logging intialized.")
 
 
 class InferenceSampler(Callable):
-    """ Wrapper around DDIM sampler to handle conditioning and unconditional sampling. """
+    """Wrapper around DDIM sampler to handle conditioning and unconditional sampling."""
 
     def __init__(
         self,
@@ -116,23 +109,23 @@ class InferenceSampler(Callable):
         zh, zw = H // 8, W // 8
 
         # keys to build conditional and unconditional dicts
-        cond_keys = ["ref_image", "cam_pose", "ref_cam_pose", "kpts", "ref_kpts", "plucker", "ref_plucker"]
+        cond_keys = [
+            "ref_image",
+            "cam_pose",
+            "ref_cam_pose",
+            "kpts",
+            "ref_kpts",
+            "plucker",
+            "ref_plucker",
+        ]
 
         if getattr(self.model, "multiview_grid_stack", False):
             denoise_shape = (1, self.num_channels, zh, zw)
         else:
             denoise_shape = (1, NV, self.num_channels, zh, zw)
 
-        cond = {
-            k: v
-            for k, v in batch.items()
-            if k in cond_keys
-        }
-        uncond = {
-            k: v
-            for k, v in batch.items()
-            if k in cond_keys
-        }
+        cond = {k: v for k, v in batch.items() if k in cond_keys}
+        uncond = {k: v for k, v in batch.items() if k in cond_keys}
 
         # prepare identifiers for each batch
         try:
@@ -162,11 +155,13 @@ class InferenceSampler(Callable):
             # uncond_ramp = np.linspace(9.0, self.uncond_scale, NV//2)
 
             # quarter, fixed, quarter
-            uncond_ramp1 = np.linspace(registry.uncond_ramp, self.uncond_scale, NV//4)
-            uncond_ramp2 = np.linspace(self.uncond_scale, self.uncond_scale, NV//4)
+            uncond_ramp1 = np.linspace(registry.uncond_ramp, self.uncond_scale, NV // 4)
+            uncond_ramp2 = np.linspace(self.uncond_scale, self.uncond_scale, NV // 4)
             uncond_ramp = np.concatenate([uncond_ramp1, uncond_ramp2])
 
-            uncond_scale = th.from_numpy(np.concatenate([uncond_ramp, uncond_ramp[::-1]]))
+            uncond_scale = th.from_numpy(
+                np.concatenate([uncond_ramp, uncond_ramp[::-1]])
+            )
             print(f"using uncond ramp: {uncond_scale}")
 
         # default is fp16
@@ -191,7 +186,10 @@ class InferenceSampler(Callable):
                 if not global_registry.get("chunk_vae", False):
                     try:
                         image_sample = (
-                            self.model.decode_image(x_sample).clip(0, 255).to(th.uint8).cpu()
+                            self.model.decode_image(x_sample)
+                            .clip(0, 255)
+                            .to(th.uint8)
+                            .cpu()
                         )
                     except:
                         global_registry.chunk_vae = True
@@ -200,7 +198,9 @@ class InferenceSampler(Callable):
                 if global_registry.get("chunk_vae", False):
                     slices = th.split(x_sample, 2, dim=0)
                     slices_dec = [self.model.decode_image(x) for x in slices]
-                    image_sample = th.cat(slices_dec, dim=0).clip(0, 255).to(th.uint8).cpu()
+                    image_sample = (
+                        th.cat(slices_dec, dim=0).clip(0, 255).to(th.uint8).cpu()
+                    )
 
                 image_sample = rearrange(
                     image_sample, "(B NV) C H W -> B NV C H W", B=B, NV=NV
@@ -240,19 +240,19 @@ def generate_and_save(
     metrics=None,
     ref_images_dir=None,  # dir of reference images (passed externally to evaluate on)
     traj=None,  # if True, use custom cameras along a trajectory
-    seq=False, # if True, reference frames are a video sequence
-    nerfstudio=False, # if True, save outputs that can be used that can be splatted w/ nerfstudio
+    seq=False,  # if True, reference frames are a video sequence
+    nerfstudio=False,  # if True, save outputs that can be used that can be splatted w/ nerfstudio
 ):
-
     outputs, metrics_list = [], []
     sample_name = "sample" if sample_name is None else sample_name
 
     for sid, batch in tqdm(enumerate(dataloader_or_dataset), desc="Number of Samples:"):
         from copy import deepcopy
+
         batch = deepcopy(batch)
 
         # keep only first sample
-        for k,v in batch.items():
+        for k, v in batch.items():
             if isinstance(v, (th.Tensor, np.ndarray, list)):
                 batch[k] = v[:1]
 
@@ -266,6 +266,7 @@ def generate_and_save(
                 except Exception as e:
                     print(f"Exception occured: {e}")
                     import traceback
+
                     logger.info(traceback.format_exc())
             gen_samples.append(preds)
 
@@ -292,7 +293,15 @@ def generate_and_save(
 
 
 def save_image(
-    batch, gen_samples, output_dir, save_gt, save_ref_image, sample_name, metrics, traj, nerfstudio
+    batch,
+    gen_samples,
+    output_dir,
+    save_gt,
+    save_ref_image,
+    sample_name,
+    metrics,
+    traj,
+    nerfstudio,
 ):
     # attempt squeezing only along NV,T axes (if they exist)
     images = [preds["image_sample"].squeeze(1, 2) for preds in gen_samples]
@@ -345,7 +354,7 @@ def save_image(
                 v = batch[k].squeeze(1, 2).cpu() * 255.0
             else:
                 raise NotImplementedError("only kpts and mask are supported")
-            v = v[:, :NV+1]  # one for reference
+            v = v[:, : NV + 1]  # one for reference
             v = rearrange(v, "B NV C H W -> B C H (NV W)")
             images = images + [v]
     try:
@@ -364,9 +373,16 @@ def save_image(
             raise NotImplementedError("only new_axis_mode is supported")
 
         # remove keypoints / masked rows from metric grid
-        gen_image_grid = image_grid[:, :(H * (len(gen_samples) + 1))]
+        gen_image_grid = image_grid[:, : (H * (len(gen_samples) + 1))]
         metrics_dict = get_metrics(
-            video_or_image_grid=gen_image_grid, metrics=metrics, output_dir=output_dir, batch=batch, sample_name=sample_name, H=H, W=W, NV=NV
+            video_or_image_grid=gen_image_grid,
+            metrics=metrics,
+            output_dir=output_dir,
+            batch=batch,
+            sample_name=sample_name,
+            H=H,
+            W=W,
+            NV=NV,
         )
 
     return image_grid, metrics_dict

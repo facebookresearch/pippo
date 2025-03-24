@@ -4,18 +4,17 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Tuple, Optional, List, Union, Callable
-import torch as th
-import torch.nn as nn
-
-import numpy as np
-from einops import rearrange, repeat
+import logging
 import os
 import time
-import imageio
+from typing import Callable, List, Optional, Tuple, Union
 
+import imageio
+import numpy as np
+import torch as th
+import torch.nn as nn
+from einops import rearrange, repeat
 from tqdm import tqdm
-import logging
 
 logging.basicConfig(
     format="[%(asctime)s][%(levelname)s][%(name)s]: %(message)s",
@@ -204,7 +203,6 @@ class DDIMSampler:
         return_intermediate: bool = False,
         **kwargs,
     ) -> th.Tensor:
-
         device = self.model.schedule.betas.device
 
         if x_T is None:

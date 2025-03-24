@@ -7,7 +7,6 @@
 import numpy as np
 import torch as th
 import torch.nn as nn
-
 from einops import rearrange
 
 
@@ -92,5 +91,3 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos, return_tensor: bool = Fals
         emb = th.from_numpy(emb).float()
 
     return emb
-
-

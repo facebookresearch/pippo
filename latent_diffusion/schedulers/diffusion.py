@@ -55,14 +55,14 @@ def get_named_betas_schedule(
     linear_end: float = 0.0120,
     cosine_start: float = 0.008,
 ):
-
     if schedule_type == "linear":
         betas = th.linspace(linear_start, linear_end, steps=num_timesteps).to(
             th.float64
         )
     elif schedule_type == "linear_sd" or schedule_type == "scaled_linear":
         betas = (
-            th.linspace(linear_start**0.5, linear_end**0.5, steps=num_timesteps) ** 2
+            th.linspace(linear_start**0.5, linear_end**0.5, steps=num_timesteps)
+            ** 2
         ).to(th.float64)
     elif schedule_type == "cosine":
         timesteps = (
@@ -263,7 +263,6 @@ class DiffusionSchedule(nn.Module):
         t: th.Tensor,
         **kwargs,
     ) -> Dict[str, th.Tensor]:
-
         preds = {}
 
         preds["noise_preds"] = self.predict_noise(x_t=x_t, model_preds=model_preds, t=t)

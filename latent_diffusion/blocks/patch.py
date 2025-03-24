@@ -4,8 +4,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Optional, Tuple, Union
 import collections.abc
+from typing import Optional, Tuple, Union
 
 import torch as th
 import torch.nn as nn
@@ -37,7 +37,6 @@ def to_3tuple(x):
 
 
 class Patchify(nn.Module):
-
     def __init__(
         self,
         img_size: Tuple[int, int],
@@ -131,7 +130,6 @@ class PatchifyPS(nn.Module):
 
 
 class Unpatchify(nn.Module):
-
     def __init__(self, in_channels: int, patch_size: int, out_channels: int):
         super().__init__()
         # self.img_size = to_2tuple(img_size)
@@ -239,7 +237,6 @@ class UnpatchifyPS(nn.Module):
 
 
 def test_patchify_ps():
-
     device = th.device("cuda:0")
 
     B, D, H, W = 32, 4, 256, 256

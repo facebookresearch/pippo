@@ -9,14 +9,15 @@ from typing import List, Optional
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
-
 from einops import rearrange
+
+from latent_diffusion.blocks.patch import PatchifyPS
 from latent_diffusion.blocks.pos_embed import (
     get_1d_sincos_pos_embed,
     get_2d_sincos_pos_embed,
 )
-from latent_diffusion.blocks.patch import PatchifyPS
 from latent_diffusion.blocks.siren import SIREN
+
 
 class LayerNorm2d(nn.LayerNorm):
     def __init__(self, *args, **kwargs):
@@ -28,6 +29,7 @@ class LayerNorm2d(nn.LayerNorm):
            x: [B, C, H, W] 4D tensor
         """
         return super().forward(x.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+
 
 class GEGLU(nn.Module):
     def __init__(self, dim_in: int, dim_out: int):
@@ -66,7 +68,6 @@ class FeedForward(nn.Module):
 
 
 class RefBlock(nn.Module):
-
     def __init__(
         self,
         dim: int,
@@ -106,7 +107,6 @@ class RefMLP(nn.Module):
         cond_type: str = "2D",  # 2D for images, 1D for tokens
         mult: int = 1,
         init_last_zero: bool = False,  # initialize last layer to zeros
-
     ):
         super().__init__()
         self.in_channels = in_channels
@@ -131,7 +131,9 @@ class RefMLP(nn.Module):
         self.blocks = nn.ModuleList(blocks)
 
         # make pos_embed learnable (zero intialized)
-        self.pos_embed = nn.Parameter(th.zeros(1, num_patches_or_tokens, hidden_size), requires_grad=True)
+        self.pos_embed = nn.Parameter(
+            th.zeros(1, num_patches_or_tokens, hidden_size), requires_grad=True
+        )
 
     def initialize_weights(self):
         def _basic_init(module):
@@ -145,7 +147,7 @@ class RefMLP(nn.Module):
         # initialize pos_embed by sin-cos embedding:
         if self.cond_type == "2D":
             pos_embed = get_2d_sincos_pos_embed(
-                self.pos_embed.shape[-1], int(self.pos_embed.shape[-2]**0.5)
+                self.pos_embed.shape[-1], int(self.pos_embed.shape[-2] ** 0.5)
             )
         elif self.cond_type == "1D":
             pos_embed = get_1d_sincos_pos_embed(
@@ -182,7 +184,6 @@ class RefMLP(nn.Module):
 
 
 class Ref2DMLP(nn.Module):
-
     def __init__(
         self,
         img_size,
@@ -263,23 +264,27 @@ class Ref2DMLP(nn.Module):
         self.blocks = nn.ModuleList(blocks)
 
         if self.use_pos_embed:
-            self.pos_embed = nn.Parameter(th.zeros(1, self.num_patches_or_tokens, hidden_size), requires_grad=True)
+            self.pos_embed = nn.Parameter(
+                th.zeros(1, self.num_patches_or_tokens, hidden_size), requires_grad=True
+            )
             # initialize weights
             self.initialize_weights()
 
     def initialize_weights(self):
         # initialize weights similar to a controlnet
         if self.conv_block:
+
             def _basic_init(module):
                 if isinstance(module, nn.Conv2d):
                     nn.init.xavier_uniform_(module.weight)
                     if module.bias is not None:
                         nn.init.constant_(module.bias, 0)
+
             self.conv_encoder.apply(_basic_init)
 
         # initialize pos_embed by sin-cos embedding:
         pos_embed = get_2d_sincos_pos_embed(
-            self.pos_embed.shape[-1], int(self.pos_embed.shape[-2]**0.5)
+            self.pos_embed.shape[-1], int(self.pos_embed.shape[-2] ** 0.5)
         )
         self.pos_embed.data.copy_(th.from_numpy(pos_embed).float().unsqueeze(0))
 
@@ -311,7 +316,6 @@ class Ref2DMLP(nn.Module):
 
 
 def test_ref_mlp():
-
     device = th.device("cuda:0")
 
     B, N, D = 16, 256, 1024

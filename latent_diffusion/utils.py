@@ -10,15 +10,14 @@ import importlib
 import inspect
 import logging
 import os
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
-import torch as th
 import numpy as np
-
-from torch import nn
+import torch as th
 from omegaconf import DictConfig, OmegaConf
-from collections import OrderedDict
+from torch import nn
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -183,7 +182,7 @@ def load_checkpoint(
                 for name in param_names:
                     prefix = "_orig_mod."
                     if name.startswith(prefix):
-                        params[name.replace(prefix,"")] = params.pop(name)
+                        params[name.replace(prefix, "")] = params.pop(name)
 
             # prune params with shape mismatch
             if ignore_shape_mismatch:

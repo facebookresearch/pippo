@@ -5,30 +5,29 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
+import os
+import time
 from functools import partial
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
+import imageio
+import numpy as np
 import torch as th
 import torch.nn as nn
-import numpy as np
-import imageio
-import time
-import os
-
 import torch.nn.functional as F
+from diffusers import AutoencoderKL
 from einops import rearrange, repeat
-from latent_diffusion.models.control_mlp import ControlMLP
-from latent_diffusion.models.dit import DiT
+
 from latent_diffusion.blocks.patch import PatchifyPS
 from latent_diffusion.blocks.pos_embed import (
     get_1d_sincos_pos_embed,
     get_2d_sincos_pos_embed,
 )
 from latent_diffusion.blocks.ref_mlp import Ref2DMLP, RefMLP
-
+from latent_diffusion.models.control_mlp import ControlMLP
+from latent_diffusion.models.dit import DiT
 from latent_diffusion.schedulers.diffusion import DiffusionSchedule as Schedule
 from latent_diffusion.utils import load_from_config, to_device
-from diffusers import AutoencoderKL
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -86,7 +85,7 @@ class RefEncoder(nn.Module):
 
 
 class Pippo(nn.Module):
-    """ Pippo: Multiview Diffusion Transformer with ControlMLP"""
+    """Pippo: Multiview Diffusion Transformer with ControlMLP"""
 
     def __init__(
         self,
@@ -99,7 +98,7 @@ class Pippo(nn.Module):
         ref_encoder: Mapping[str, Any] = None,
         kpts_encoder: Mapping[str, Any] = None,
         face_cropper: Optional[Mapping[str, Any]] = None,  # encode faces separately
-        control_mlp: Mapping[str, Any] = None, # encode spatial controls with MLP
+        control_mlp: Mapping[str, Any] = None,  # encode spatial controls with MLP
         parameterization: str = "eps",
         scale_factor: float = 1.0,
         shift_factor: float = 0.0,
@@ -126,10 +125,9 @@ class Pippo(nn.Module):
         null_cond_spatial: bool = False,  # use null conditioning for spatial signals
         p_drop_control: float = 0.0,  # probability of dropping controlmlp inputs (keypoints / plucker)
         run_post_init: bool = False,  # run post init after creating the model
-        controlmlp_xt: bool = False, # add x_t into controlmlp
+        controlmlp_xt: bool = False,  # add x_t into controlmlp
     ):
         super().__init__()
-
 
         # vae compressor
         self.compressor = AutoencoderKL.from_pretrained(**compressor)
@@ -308,9 +306,7 @@ class Pippo(nn.Module):
             encode_fn = lambda x: self.compressor.encode(x)
 
         try:
-            x_0 = (
-                encode_fn(image_norm) - self.shift_factor
-            ) * self.scale_factor
+            x_0 = (encode_fn(image_norm) - self.shift_factor) * self.scale_factor
         except:
             # chunk VAE to avoid OOM
             slices = th.split(image_norm, 2, dim=0)
@@ -327,9 +323,7 @@ class Pippo(nn.Module):
         else:
             decode_fn = lambda x: self.compressor.decode(x)
 
-        image_norm = decode_fn(
-            latent / self.scale_factor + self.shift_factor
-        )
+        image_norm = decode_fn(latent / self.scale_factor + self.shift_factor)
         image = image_norm * 127.5 + 127.5
         return image
 
@@ -366,7 +360,7 @@ class Pippo(nn.Module):
         return_cam_pos_enc=False,
         drop_mask=None,  # replaces the drop mask
         joint_drop_mask=None,  # gets acculumated with drop_mask
-        encode_face=False, # encode only face
+        encode_face=False,  # encode only face
     ) -> th.Tensor:
         self = cls  # TODO: dirty, fix later
 
@@ -423,10 +417,12 @@ class Pippo(nn.Module):
 
             ref_patches = rearrange(ref_patches, "(B X) N D -> B X N D", B=B)
             drop_mask = drop_mask[:, None, None, None]
-            assert len(drop_mask.shape) == len(self.null_conds["ref"].shape) == len(ref_patches.shape)
-            ref_patches = th.where(
-                drop_mask, self.null_conds["ref"], ref_patches
+            assert (
+                len(drop_mask.shape)
+                == len(self.null_conds["ref"].shape)
+                == len(ref_patches.shape)
             )
+            ref_patches = th.where(drop_mask, self.null_conds["ref"], ref_patches)
             ref_patches = rearrange(ref_patches, "B X N D -> (B X) N D", N=N)
 
         if not self.multiview_grid_stack:
@@ -574,12 +570,11 @@ class Pippo(nn.Module):
         cam_pose: Optional[th.Tensor] = None,
         plucker: Optional[th.Tensor] = None,
         ref_plucker: Optional[th.Tensor] = None,
-        noisy_views_mask: Optional[th.Tensor] = None, # autoregressive
-        noisy_timestep_ids: Optional[th.Tensor] = None, # autoregressive
+        noisy_views_mask: Optional[th.Tensor] = None,  # autoregressive
+        noisy_timestep_ids: Optional[th.Tensor] = None,  # autoregressive
         training: bool = True,
         attn_bias: float = None,
     ) -> Dict[str, th.Tensor]:
-
         # post initialization
         self.post_init()
 
@@ -594,10 +589,8 @@ class Pippo(nn.Module):
                     self.num_views,
                     self.num_ref_views,
                 ]
-                image, ref_image, cam_pose, ref_cam_pose = (
-                    Pippo._preprocess(
-                        self, data_list=data_list, NV_list=NV_list, squash_time=True
-                    )
+                image, ref_image, cam_pose, ref_cam_pose = Pippo._preprocess(
+                    self, data_list=data_list, NV_list=NV_list, squash_time=True
                 )
         except:
             breakpoint()
@@ -626,7 +619,7 @@ class Pippo(nn.Module):
                     p_drop=p_drop,
                     return_cam_pos_enc=True,
                     drop_mask=fr_drop_mask,
-                    encode_face=True
+                    encode_face=True,
                 )
                 cond_attn = ref_image_attn
                 if ref_cam_pose_enc is not None:
@@ -648,7 +641,9 @@ class Pippo(nn.Module):
 
                     if ref_cam_pose_enc is not None:
                         full_ref_cam_pose_enc = full_ref_cam_pose_enc[:, None]
-                        ref_cam_pose_enc = th.cat([ref_cam_pose_enc, full_ref_cam_pose_enc], dim=1)
+                        ref_cam_pose_enc = th.cat(
+                            [ref_cam_pose_enc, full_ref_cam_pose_enc], dim=1
+                        )
             else:
                 ref_image_attn, ref_cam_pose_enc = self.encode_ref_image(
                     self,
@@ -785,9 +780,8 @@ class Pippo(nn.Module):
 
         controls = None
         if self.control_mlp is not None:
-
             all_NV = self.num_views + 1
-            if self.face_cropper is not None  and not self.replace_ref_w_face:
+            if self.face_cropper is not None and not self.replace_ref_w_face:
                 # we have extra face reference vector (add corresponding control vectors)
                 ref_kpts = th.cat([ref_kpts, ref_kpts], dim=1)
                 ref_plucker = th.cat([ref_plucker, ref_plucker], dim=1)
@@ -828,7 +822,9 @@ class Pippo(nn.Module):
                 all_x_t = th.cat([x_t, zero_ref_xt], dim=1)
                 all_x_t = rearrange(all_x_t, "B NV ... -> (B NV) ...")
 
-            controls = self.control_mlp(all_kpts, t=tr, p_drop=p_drop, plucker=plucker, x_t=all_x_t)
+            controls = self.control_mlp(
+                all_kpts, t=tr, p_drop=p_drop, plucker=plucker, x_t=all_x_t
+            )
 
         # autoregressive generation
         cond, patch_pos = None, True
@@ -839,7 +835,6 @@ class Pippo(nn.Module):
             "cond_cat": cond_cat,
             "controls": controls,
             "cond_cat_split_attn": cond_cat_split_attn,
-
             "cond": cond,
             "patch_pos": patch_pos,
             "x_t": x_t,
@@ -861,13 +856,12 @@ class Pippo(nn.Module):
         cam_pose: Optional[th.Tensor] = None,
         plucker: Optional[th.Tensor] = None,
         ref_plucker: Optional[th.Tensor] = None,
-        noisy_views_mask: Optional[th.Tensor] = None, # autoregressive
-        noisy_timestep_ids: Optional[th.Tensor] = None, # autoregressive
-        ar_uncond_type: Optional[str] = None, # autoregressive
+        noisy_views_mask: Optional[th.Tensor] = None,  # autoregressive
+        noisy_timestep_ids: Optional[th.Tensor] = None,  # autoregressive
+        ar_uncond_type: Optional[str] = None,  # autoregressive
         attn_bias: float = None,
         **kwargs,
     ) -> Dict[str, th.Tensor]:
-
         # post initialization
         self.post_init()
 
@@ -881,10 +875,8 @@ class Pippo(nn.Module):
                 self.num_views,
                 self.num_ref_views,
             ]
-            image, ref_image, cam_pose, ref_cam_pose = (
-                Pippo._preprocess(
-                    self, data_list=data_list, NV_list=NV_list, squash_time=True
-                )
+            image, ref_image, cam_pose, ref_cam_pose = Pippo._preprocess(
+                self, data_list=data_list, NV_list=NV_list, squash_time=True
             )
 
         # drop all conditions jointly (and at same places)
@@ -902,7 +894,8 @@ class Pippo(nn.Module):
             p_drop = max(p_drop, p_drop_all, p_drop_ref_ar_joint)
 
             # only drop noisy reference view (during cfg)
-            if ar_uncond_type == "noisy_ref": p_drop = 0.0
+            if ar_uncond_type == "noisy_ref":
+                p_drop = 0.0
 
             if self.face_cropper is not None:
                 # face and ref joint drop mask
@@ -916,7 +909,7 @@ class Pippo(nn.Module):
                     p_drop=p_drop,
                     return_cam_pos_enc=True,
                     drop_mask=fr_drop_mask,
-                    encode_face=True
+                    encode_face=True,
                 )
                 cond_attn = ref_image_attn
                 if ref_cam_pose_enc is not None:
@@ -938,7 +931,9 @@ class Pippo(nn.Module):
 
                     if ref_cam_pose_enc is not None:
                         full_ref_cam_pose_enc = full_ref_cam_pose_enc[:, None]
-                        ref_cam_pose_enc = th.cat([ref_cam_pose_enc, full_ref_cam_pose_enc], dim=1)
+                        ref_cam_pose_enc = th.cat(
+                            [ref_cam_pose_enc, full_ref_cam_pose_enc], dim=1
+                        )
             else:
                 ref_image_attn, ref_cam_pose_enc = self.encode_ref_image(
                     self,
@@ -1074,7 +1069,7 @@ class Pippo(nn.Module):
 
         controls = None
         if self.control_mlp is not None:
-            if self.face_cropper is not None  and not self.replace_ref_w_face:
+            if self.face_cropper is not None and not self.replace_ref_w_face:
                 # we have extra face reference vector (add corresponding control vectors)
                 ref_kpts = th.cat([ref_kpts, ref_kpts], dim=1)
                 ref_plucker = th.cat([ref_plucker, ref_plucker], dim=1)
@@ -1118,7 +1113,9 @@ class Pippo(nn.Module):
             # cfg dropout
             p_drop = float(self.p_drop_control > 0)
             p_drop = max(p_drop, p_drop_all)
-            controls = self.control_mlp(all_kpts, t=tr, p_drop=p_drop, x_t=all_x_t, plucker=plucker)
+            controls = self.control_mlp(
+                all_kpts, t=tr, p_drop=p_drop, x_t=all_x_t, plucker=plucker
+            )
 
         # handle cfg for autoregressive generation
         cond, patch_pos = None, True
@@ -1129,7 +1126,6 @@ class Pippo(nn.Module):
             "cond_cat": cond_cat,
             "controls": controls,
             "cond_cat_split_attn": cond_cat_split_attn,
-
             "cond": cond,
             "patch_pos": patch_pos,
             "x_t": x_t,
@@ -1173,10 +1169,8 @@ class Pippo(nn.Module):
             self.num_ref_views,
         ]
         try:
-            image, ref_image, cam_pose, ref_cam_pose = (
-                Pippo._preprocess(
-                    self, data_list=data_list, NV_list=NV_list, squash_time=True
-                )
+            image, ref_image, cam_pose, ref_cam_pose = Pippo._preprocess(
+                self, data_list=data_list, NV_list=NV_list, squash_time=True
             )  # [B*NV*T, ...]
         except:
             breakpoint()
@@ -1240,9 +1234,10 @@ class Pippo(nn.Module):
         return preds
 
     def recon_vae(self, image, ref_image):
-        """ utility method to dump vae reconstructed samples """
+        """utility method to dump vae reconstructed samples"""
 
         import time
+
         import einops
         import imageio
         import numpy as np
@@ -1284,7 +1279,9 @@ class Pippo(nn.Module):
         rv = np.concatenate([ref_image, ov, dv], axis=2)
         ts = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
 
-        save_dir = "/".join(os.path.abspath(__file__).split("/")[:-3] + ["outputs", "debug"])
+        save_dir = "/".join(
+            os.path.abspath(__file__).split("/")[:-3] + ["outputs", "debug"]
+        )
         os.makedirs(save_dir, exist_ok=True)
         save_path = os.path.join(save_dir, f"video_recon_{ts}.mp4")
         imageio.mimsave(save_path, rv, fps=2)
@@ -1292,11 +1289,12 @@ class Pippo(nn.Module):
         breakpoint()
 
     def dump_noisy_samples(self, x_0):
-        """ utility method to dump noisy samples """
+        """utility method to dump noisy samples"""
 
         breakpoint()
 
         import time
+
         import imageio
         import numpy as np
         import torch.nn.functional as F
@@ -1326,9 +1324,13 @@ class Pippo(nn.Module):
         )
         ts = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
         rr = self.schedule.rescale_ratio
-        save_dir = "/".join(os.path.abspath(__file__).split("/")[:-3] + ["outputs", "debug"])
+        save_dir = "/".join(
+            os.path.abspath(__file__).split("/")[:-3] + ["outputs", "debug"]
+        )
         os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(save_dir,f"noised_{ts}_rescale_ratio_{rr}_imgsize_{self.img_size}.jpg")
+        save_path = os.path.join(
+            save_dir, f"noised_{ts}_rescale_ratio_{rr}_imgsize_{self.img_size}.jpg"
+        )
         imageio.imsave(save_path, image_grid)
         print(f"saved image to {save_path}")
         breakpoint()
@@ -1379,10 +1381,13 @@ class Pippo(nn.Module):
 
 
 def test_pippo():
-    import einops, os
+    import os
+
+    import einops
     import torch.multiprocessing as mp
     from omegaconf import OmegaConf
     from torchvision.utils import make_grid
+
     from latent_diffusion.data import load_batches
 
     th.set_float32_matmul_precision("high")
