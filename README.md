@@ -1,4 +1,5 @@
 <h2 align="center">Pippo: High-Resolution Multi-View Humans from a Single Image</h2>
+<h3 align="center"> CVPR, 2025 (Highlight)</h3>
 
 <p align="center">
    <a href='https://yashkant.github.io/pippo/'>
@@ -18,7 +19,6 @@
    </a>
 </p>
 
-<h3 align="center"> CVPR, 2025 (Highlight)</h3>
 
 <p align="center">
   <img src="./assets/pippo_short_github.gif" alt="Pippo" title="Pippo" width="1080"/>
