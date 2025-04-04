@@ -1,6 +1,5 @@
 <h2 align="center">Pippo: High-Resolution Multi-View Humans from a Single Image</h2>
 <h3 align="center"> CVPR, 2025 (Highlight)</h3>
-
 <p align="center">
    <a href='https://yashkant.github.io/pippo/'>
       <img src='https://img.shields.io/badge/Pippo-Page-azure?style=for-the-badge&logo=Google%20chrome&logoColor=white&labelColor=000080&color=007FFF' alt='Project Page'>
