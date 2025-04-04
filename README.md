@@ -1,5 +1,4 @@
-<h2 align="center">Pippo: High-Resolution Multi-View Humans from a Single Image</h1>
-
+<h2 align="center">Pippo: High-Resolution Multi-View Humans from a Single Image</h2>
 <p align="center">
    <a href='https://yashkant.github.io/pippo/'>
       <img src='https://img.shields.io/badge/Pippo-Page-azure?style=for-the-badge&logo=Google%20chrome&logoColor=white&labelColor=000080&color=007FFF' alt='Project Page'>
@@ -17,6 +16,8 @@
       <img src='https://img.shields.io/badge/More-Results-ffffff?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCI+PHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xOSAzSDVjLTEuMSAwLTIgLjktMiAydjE0YzAgMS4xLjkgMiAyIDJoMTRjMS4xIDAgMi0uOSAyLTJWNWMwLTEuMS0uOS0yLTItMnpNOSAxN0g3di01aDJ2NXptNCAwaC0ydi03aDJ2N3ptNCAwaC0yVjhoMnY5eiIvPjwvc3ZnPg==&logoColor=white&labelColor=8A2BE2&color=9370DB' alt='Visuals (Drive)'>
    </a>
 </p>
+
+<h3 align="center"> CVPR, 2025 (Highlight)</h3>
 
 <p align="center">
   <img src="./assets/pippo_short_github.gif" alt="Pippo" title="Pippo" width="1080"/>
