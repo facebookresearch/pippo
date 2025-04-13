@@ -72,7 +72,7 @@ export PATH=$PATH:$PWD
 conda create -n pippo python=3.10.1 -c conda-forge
 conda activate pippo
 
-# can adjust as required (we tested on below configuration)
+# can adjust as required (we tested on the following configuration)
 conda install pytorch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 pytorch-cuda=12.0 -c pytorch -c nvidia
 
 pip install -r requirements.txt
@@ -80,7 +80,7 @@ pip install -r requirements.txt
 ```
 
 ## Download and Sample Training
-You can launch a sample training run on few samples of [Ava-256 dataset](https://github.com/facebookresearch/ava-256). We provide pre-packaged samples for this training stored as npy files [here](https://huggingface.co/datasets/yashkant/pippo/tree/main). Ensure you are authenticated to huggingface with login token to download the samples.
+You can launch a sample training run on a few samples of [Ava-256 dataset](https://github.com/facebookresearch/ava-256). We provide pre-packaged samples for this training stored as npy files [here](https://huggingface.co/datasets/yashkant/pippo/tree/main). Ensure you are authenticated to huggingface with login token to download the samples.
 ```
 # download packaged Ava-256 samples
 python scripts/pippo/download_samples.py
