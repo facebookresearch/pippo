@@ -17,7 +17,7 @@ regex==2024.11.6
 safetensors==0.5.2
 scipy==1.15.1
 tokenizers==0.21.0
-torch==2.4.0
+torch==2.8.0
 torchaudio==2.4.0
 torchvision==0.19.0
 tqdm==4.67.1
