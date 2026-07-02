@@ -21,7 +21,7 @@ torch==2.4.0
 torchaudio==2.4.0
 torchvision==0.19.0
 tqdm==4.67.1
-transformers==4.48.2
+transformers==5.3.0
 triton==3.0.0
 wcwidth==0.2.13
 zipp==3.21.0
