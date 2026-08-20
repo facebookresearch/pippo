@@ -173,7 +173,7 @@ class DiffusionSchedule(nn.Module):
         if self.parameterization == "eps":
             return model_preds
         elif self.parameterization == "v":
-            return self.predict_noise_from_v(x_t, v_preds, t)
+            return self.predict_noise_from_v(x_t, model_preds, t)
         else:
             raise NotImplementedError(
                 f"parameterization `{self.parameterization}` is not supported"
